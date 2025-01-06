@@ -84,6 +84,18 @@ Finished processing dependencies for sqlcipher3==0.5.4
 python -m pyrekordbox download-key
 ```
 
+<details><summary>トラブルシューティング</summary>
+
+- 以下のエラーが発生した場合
+
+  ```sh
+  urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)>
+  ```
+  
+  解決法: https://qiita.com/SakaDKyo/items/89e80201843c681f6e87
+　
+</details>
+
 ## 7. rekordbox検出の確認
 
 - pyrekordboxがPCにインストールされているrekordbox 6を検出できているか確認
@@ -122,3 +134,9 @@ python link.py <楽曲プレイリスト名> <動画プレイリスト名>
 
 - うまく行けば、LINKされた楽曲と動画の組が一覧で出力される。
 - rekordboxを起動すると指定したプレイリスト内の楽曲全てに動画がLINKされているはず。
+
+- 逆にリンクを一括で解除したい場合は以下のコマンドを実行。
+
+```sh
+python unlink.py <楽曲プレイリスト名>
+```

@@ -36,7 +36,11 @@ def main(db, song_playlist_name, video_playlist_name):
         exit("[ERROR] 動画プレイリストを取得できませんでした。")
 
     if len(songs) != len(videos):
-        exit("[ERROR] 楽曲と動画の数が一致していません。")
+        input_ = input("[WARNING] 楽曲と動画の数が一致していません。無視して続行しますか？(y/n): ")
+        if input_ != "y": exit()
+        lesser_length = min(len(songs), len(videos))
+        songs = songs[:lesser_length]
+        videos = videos[:lesser_length]
 
     try:
         table = []

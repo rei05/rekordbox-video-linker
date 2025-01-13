@@ -1,3 +1,4 @@
+import os
 import sys
 from pyrekordbox import Rekordbox6Database
 from tabulate import tabulate
@@ -48,8 +49,10 @@ def main(db, song_playlist_name, video_playlist_name):
             song.VideoAssociate = video.ID
             table.append([i+1, song.Title, video.Title])
         db.commit()
-        print("[INFO] LINK成功。")
         print(tabulate(table, headers=["TrackNo", "Song", "Video"], tablefmt="grid"))
+        print("[INFO] LINK成功。")
+        input("[INFO] Enterキーを押すとコンソールログをクリアして終了します。")
+        os.system("clear")
     except:
         exit("[ERROR] LINKに失敗しました。")
 

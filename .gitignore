@@ -3,10 +3,4 @@
 /main.build
 /main.dist
 /venv
-/venv_nuitka
-/sqlcipher3
-/sqlcipher-amalgamation
-/build
-/dist
 .DS_Store
-*.spec

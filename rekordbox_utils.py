@@ -1,10 +1,14 @@
+import io
+from pathlib import Path
+import sys
 import re
 import subprocess
 import time
 import urllib.request
+import platform
 from enum import IntEnum
 
-from pyrekordbox import Rekordbox6Database
+from pyrekordbox import Rekordbox6Database, show_config
 from pyrekordbox.db6.tables import DjmdContent, DjmdPlaylist
 
 
@@ -74,12 +78,20 @@ def fit_list_len(list1, list2):
     return list2
 
 def is_rekordbox_running():
-    result = subprocess.run(['pgrep', '-fl', 'rekordbox'], stdout=subprocess.PIPE)
-    return True if result.stdout else False
+    if platform.system() == "Windows":
+        result = subprocess.run(['tasklist'], stdout=subprocess.PIPE, text=True)
+        return "rekordbox.exe" in result.stdout
+    else:
+        result = subprocess.run(['pgrep', '-fl', 'rekordbox'], stdout=subprocess.PIPE)
+        return True if result.stdout else False
 
 def close_rekordbox():
     if is_rekordbox_running():
-        subprocess.run(['pkill', 'rekordbox'])
+        if platform.system() == "Windows":
+            subprocess.run(['taskkill', '/IM', 'rekordbox.exe', '/F'])
+        else:
+            subprocess.run(['pkill', 'rekordbox'])
+        
         timeout = 10
         elapsed_time = 0
         while is_rekordbox_running() and elapsed_time < timeout:
@@ -89,7 +101,29 @@ def close_rekordbox():
             exit("[Error] rekordboxの終了がタイムアウトしました。")
 
 def start_rekordbox():
-    subprocess.run(['open', '-a', 'rekordbox'])
+    if platform.system() == "Windows":
+        rekordbox_path = get_rekordbox_path()
+        subprocess.run([rekordbox_path / 'rekordbox.exe'])
+    else:
+        subprocess.run(['open', '-a', 'rekordbox'])
+
+# rekordbox.exeのパスを取得する
+def get_rekordbox_path():
+
+    # 標準出力をキャプチャするためのオブジェクトを作成
+    buffer = io.StringIO()
+    # 標準出力をbufferに切り替え
+    sys.stdout = buffer
+    # printの内容をキャプチャ
+    show_config()
+    # 標準出力を元に戻す
+    sys.stdout = sys.__stdout__
+    # bufferの内容を取得
+    config_text = buffer.getvalue()
+
+    for line in config_text.splitlines()[::-1]:
+        if "install_dir" in line:
+            return Path(line.split("=")[-1].strip())
 
 def init_playlist(name):
     return DjmdPlaylist(Name=f"{name}プレイリスト未選択")

@@ -1,10 +1,16 @@
+import io
+import psutil
+import platform
 import re
 import subprocess
+import sys
 import time
 import urllib.request
 from enum import IntEnum
+from pathlib import Path
 
-from pyrekordbox import Rekordbox6Database
+import psutil
+from pyrekordbox import Rekordbox6Database, show_config
 from pyrekordbox.db6.tables import DjmdContent, DjmdPlaylist
 
 
@@ -25,6 +31,10 @@ class RekordboxDB(Rekordbox6Database):
         sorted_indices = argsort(list(map(lambda x: x.Name, playlists)))
         return [playlists[i] for i in sorted_indices]
 
+    def sort_by_title(self, songs):
+        sorted_indices = argsort(list(map(lambda x: x.Content.Title, songs)))
+        return [songs[i] for i in sorted_indices]
+
     def sort_by_trackno(self, songs):
         sorted_indices = argsort(list(map(lambda x: x.TrackNo, songs)))
         return [songs[i] for i in sorted_indices]
@@ -33,9 +43,14 @@ class RekordboxDB(Rekordbox6Database):
         playlists = self.get_playlist().all()
         return self.sort_by_name(playlists)
 
-    def get_playlist_contents(self, playlist):
+    def get_playlist_contents(self, playlist, sort_type="trackno"):
         songs = self.get_playlist_songs(Playlist=playlist).all()
-        return list(map(lambda x: x.Content, self.sort_by_trackno(songs)))
+        if sort_type == "title":
+            return list(map(lambda x: x.Content, self.sort_by_title(songs)))
+        elif sort_type == "trackno":
+            return list(map(lambda x: x.Content, self.sort_by_trackno(songs)))
+        else:
+            raise ValueError("Invalid sort type. Use 'title' or 'trackno'.")
     
     def link(self, songs, videos):
         target_videos = fit_list_len(songs, videos)
@@ -74,28 +89,62 @@ def fit_list_len(list1, list2):
     return list2
 
 def is_rekordbox_running():
-    result = subprocess.run(['pgrep', '-fl', 'rekordbox'], stdout=subprocess.PIPE)
-    return True if result.stdout else False
+    if platform.system() == "Windows":
+        for proc in psutil.process_iter(['name']):
+            if proc.info['name'] and "rekordbox.exe" in proc.info['name'].lower():
+                return True
+        return False
+    else:
+        try:
+            # AppleScript: 起動中のアプリ一覧を取得
+            script = 'tell application "System Events" to get name of (processes where background only is false)'
+            output = subprocess.check_output(['osascript', '-e', script], text=True)
+            running_apps = [app.strip() for app in output.strip().split(',')]
+            return "rekordbox" in running_apps
+        except subprocess.CalledProcessError as e:
+            print(f"AppleScript error: {e}")
+            return False
 
 def close_rekordbox():
     if is_rekordbox_running():
-        subprocess.run(['pkill', 'rekordbox'])
+        if platform.system() == "Windows":
+            subprocess.Popen(['taskkill', '/IM', 'rekordbox.exe', '/F'])
+        else:
+            subprocess.Popen(['pkill', 'rekordbox'])
+        
         timeout = 10
         elapsed_time = 0
         while is_rekordbox_running() and elapsed_time < timeout:
+            print("is_rekordbox_running")
             time.sleep(1)
             elapsed_time += 1
         if elapsed_time >= timeout:
-            exit("[Error] rekordboxの終了がタイムアウトしました。")
+            sys.exit("[Error] rekordboxの終了がタイムアウトしました。")
 
 def start_rekordbox():
-    subprocess.run(['open', '-a', 'rekordbox'])
+    if platform.system() == "Windows":
+        rekordbox_path = get_rekordbox_path()
+        subprocess.Popen([rekordbox_path / 'rekordbox.exe'])
+    else:
+        subprocess.Popen(['open', '-a', 'rekordbox'])
 
-def init_playlist(name):
-    return DjmdPlaylist(Name=f"{name}プレイリスト未選択")
+# rekordbox.exeのパスを取得する
+def get_rekordbox_path():
 
-def create_blank_content(title):
-    return DjmdContent(ID=None, Title=title)
+    # 標準出力をキャプチャするためのオブジェクトを作成
+    buffer = io.StringIO()
+    # 標準出力をbufferに切り替え
+    sys.stdout = buffer
+    # printの内容をキャプチャ
+    show_config()
+    # 標準出力を元に戻す
+    sys.stdout = sys.__stdout__
+    # bufferの内容を取得
+    config_text = buffer.getvalue()
+
+    for line in config_text.splitlines()[::-1]:
+        if "install_dir" in line:
+            return Path(line.split("=")[-1].strip())
 
 def download_key():
 

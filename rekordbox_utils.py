@@ -1,13 +1,14 @@
 import io
-from pathlib import Path
-import sys
+import platform
 import re
 import subprocess
+import sys
 import time
 import urllib.request
-import platform
 from enum import IntEnum
+from pathlib import Path
 
+import psutil
 from pyrekordbox import Rekordbox6Database, show_config
 from pyrekordbox.db6.tables import DjmdContent, DjmdPlaylist
 
@@ -88,33 +89,41 @@ def fit_list_len(list1, list2):
 
 def is_rekordbox_running():
     if platform.system() == "Windows":
-        result = subprocess.run(['tasklist'], stdout=subprocess.PIPE, text=True)
+        result = subprocess.Popen(['tasklist'], stdout=subprocess.PIPE, text=True)
         return "rekordbox.exe" in result.stdout
     else:
-        result = subprocess.run(['pgrep', '-fl', 'rekordbox'], stdout=subprocess.PIPE)
-        return True if result.stdout else False
+        try:
+            # AppleScript: 起動中のアプリ一覧を取得
+            script = 'tell application "System Events" to get name of (processes where background only is false)'
+            output = subprocess.check_output(['osascript', '-e', script], text=True)
+            running_apps = [app.strip() for app in output.strip().split(',')]
+            return "rekordbox" in running_apps
+        except subprocess.CalledProcessError as e:
+            print(f"AppleScript error: {e}")
+            return False
 
 def close_rekordbox():
     if is_rekordbox_running():
         if platform.system() == "Windows":
-            subprocess.run(['taskkill', '/IM', 'rekordbox.exe', '/F'])
+            subprocess.Popen(['taskkill', '/IM', 'rekordbox.exe', '/F'])
         else:
-            subprocess.run(['pkill', 'rekordbox'])
+            subprocess.Popen(['pkill', 'rekordbox'])
         
         timeout = 10
         elapsed_time = 0
         while is_rekordbox_running() and elapsed_time < timeout:
+            print("is_rekordbox_running")
             time.sleep(1)
             elapsed_time += 1
         if elapsed_time >= timeout:
-            exit("[Error] rekordboxの終了がタイムアウトしました。")
+            sys.exit("[Error] rekordboxの終了がタイムアウトしました。")
 
 def start_rekordbox():
     if platform.system() == "Windows":
         rekordbox_path = get_rekordbox_path()
         subprocess.Popen([rekordbox_path / 'rekordbox.exe'])
     else:
-        subprocess.run(['open', '-a', 'rekordbox'])
+        subprocess.Popen(['open', '-a', 'rekordbox'])
 
 # rekordbox.exeのパスを取得する
 def get_rekordbox_path():

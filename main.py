@@ -64,40 +64,50 @@ def update_db():
     start_rekordbox()
 
 def rekordbox_restart_count():
-    # 残り時間をカウント
-    placeholder = st.empty()
-    for remaining in range(10, 0, -1):
-        placeholder.write(f"rekordboxを再起動中 {remaining} 秒...")
-        time.sleep(1)
-    placeholder.empty()
+    with st.spinner("rekordboxを再起動中...", show_time=True):
+        time.sleep(10)
 
 @st.dialog("確認")
 def link(sorted_video_contents):
-    st.write("rekordboxを再起動し動画をリンクします")
+    text_placeholder = st.empty()
+    text_placeholder.write("rekordboxを再起動し動画をリンクします")
  
-    col1, col2 = st.columns(2) 
+    columns_placeholder = st.empty()
+    col1, col2 = columns_placeholder.columns(2) 
     with col1:
         if st.button("実行"):
-            ss.song.link(sorted_video_contents)
-            rekordbox_restart_count()
-            st.rerun()
+            ss.link_exec_button = True
     with col2:
         if st.button("キャンセル"):
             st.rerun()
 
+    if ss.link_exec_button:
+        columns_placeholder.empty()
+        text_placeholder.empty()
+        ss.song.link(sorted_video_contents)
+        rekordbox_restart_count()
+        st.rerun()
+
 @st.dialog("確認")
 def unlink():
-    st.write("rekordboxを再起動し動画のリンクを解除します")
+    text_placeholder = st.empty()
+    text_placeholder.write("rekordboxを再起動し動画のリンクを解除します")
  
-    col1, col2 = st.columns(2) 
+    columns_placeholder = st.empty()
+    col1, col2 = columns_placeholder.columns(2) 
     with col1:
         if st.button("実行"):
-            ss.song.unlink()
-            rekordbox_restart_count()
-            st.rerun()
+            ss.link_exec_button = True
     with col2:
         if st.button("キャンセル"):
             st.rerun()
+
+    if ss.link_exec_button:
+        columns_placeholder.empty()
+        text_placeholder.empty()
+        ss.song.unlink()
+        rekordbox_restart_count()
+        st.rerun()
 
 @st.fragment
 def main():
@@ -125,7 +135,8 @@ def main():
         ss.dummy_count = 0
     if "sorted_video_contents" not in ss:
         ss.sorted_video_contents = []
-
+    if "link_exec_button" not in ss:
+        ss.link_exec_button = False
 
     # ページ切り替え用関数
     def go_to_page(page_name):
@@ -178,15 +189,16 @@ def main():
             with col1:
                 # 楽曲一覧
                 st.write("楽曲")
-                html_text = """<div style="padding: 10px;"><div style="padding: 3px;">"""
-                for i, title in enumerate(ss.song.titles, 1):
-                    html_text += f"""
-                    <div style="border:1px solid #ccc; border-radius:.25rem; padding:.375rem .75rem; margin:5px; height: 2rem; 
-                    display: flex; align-items: center; justify-content: flex-start; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
-                        <p style="margin: 0; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{i:02d} {title}</p>
-                    </div>"""
-                html_text += """</div></div>"""
-                st.markdown(html_text, unsafe_allow_html=True)
+                with st.spinner("楽曲ファイルをロード中..."):
+                    html_text = """<div style="padding: 10px;"><div style="padding: 3px;">"""
+                    for i, title in enumerate(ss.song.titles, 1):
+                        html_text += f"""
+                        <div style="border:1px solid #ccc; border-radius:.25rem; padding:.375rem .75rem; margin:5px; height: 2rem; 
+                        display: flex; align-items: center; justify-content: flex-start; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
+                            <p style="margin: 0; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{i:02d} {title}</p>
+                        </div>"""
+                    html_text += """</div></div>"""
+                    st.markdown(html_text, unsafe_allow_html=True)
 
             with col2:
                 # 楽曲ごとのリンク状況
@@ -196,9 +208,11 @@ def main():
             with col3:
                 # 動画一覧
                 st.write("動画")
-                custom_style = ".sortable-item {text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}"
-                sorted_video_titles = sort_items(ss.video.titles, direction='vertical', custom_style=custom_style)
-                ss.sorted_video_contents = [ss.video.contents[ss.video.titles.index(title)] for title in sorted_video_titles]
+
+                with st.spinner("動画ファイルをロード中..."):
+                    custom_style = ".sortable-item {text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}"
+                    sorted_video_titles = sort_items(ss.video.titles, direction='vertical', custom_style=custom_style)
+                    ss.sorted_video_contents = [ss.video.contents[ss.video.titles.index(title)] for title in sorted_video_titles]
 
                 # 楽曲ごとのリンク状況
                 html_text = """<div style="padding: 10px;"><div style="padding: 3px;">"""

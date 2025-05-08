@@ -29,6 +29,10 @@ class RekordboxDB(Rekordbox6Database):
         sorted_indices = argsort(list(map(lambda x: x.Name, playlists)))
         return [playlists[i] for i in sorted_indices]
 
+    def sort_by_title(self, songs):
+        sorted_indices = argsort(list(map(lambda x: x.Content.Title, songs)))
+        return [songs[i] for i in sorted_indices]
+
     def sort_by_trackno(self, songs):
         sorted_indices = argsort(list(map(lambda x: x.TrackNo, songs)))
         return [songs[i] for i in sorted_indices]
@@ -37,9 +41,14 @@ class RekordboxDB(Rekordbox6Database):
         playlists = self.get_playlist().all()
         return self.sort_by_name(playlists)
 
-    def get_playlist_contents(self, playlist):
+    def get_playlist_contents(self, playlist, sort_type="trackno"):
         songs = self.get_playlist_songs(Playlist=playlist).all()
-        return list(map(lambda x: x.Content, self.sort_by_trackno(songs)))
+        if sort_type == "title":
+            return list(map(lambda x: x.Content, self.sort_by_title(songs)))
+        elif sort_type == "trackno":
+            return list(map(lambda x: x.Content, self.sort_by_trackno(songs)))
+        else:
+            raise ValueError("Invalid sort type. Use 'title' or 'trackno'.")
     
     def link(self, songs, videos):
         target_videos = fit_list_len(songs, videos)
@@ -103,7 +112,7 @@ def close_rekordbox():
 def start_rekordbox():
     if platform.system() == "Windows":
         rekordbox_path = get_rekordbox_path()
-        subprocess.run([rekordbox_path / 'rekordbox.exe'])
+        subprocess.Popen([rekordbox_path / 'rekordbox.exe'])
     else:
         subprocess.run(['open', '-a', 'rekordbox'])
 
@@ -124,12 +133,6 @@ def get_rekordbox_path():
     for line in config_text.splitlines()[::-1]:
         if "install_dir" in line:
             return Path(line.split("=")[-1].strip())
-
-def init_playlist(name):
-    return DjmdPlaylist(Name=f"{name}プレイリスト未選択")
-
-def create_blank_content(title):
-    return DjmdContent(ID=None, Title=title)
 
 def download_key():
 

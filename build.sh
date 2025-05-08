@@ -1,1 +1,1 @@
-python3 -m nuitka --standalone --macos-create-app-bundle --enable-plugin=pyside6 --macos-app-icon=icon.icns --lto=yes --clang --static-libpython=yes --macos-app-mode=gui --macos-app-name=RekordboxVideoLinker --macos-app-version=1.0.0 main.py
+streamlit-desktop-app build main.py --name "RekordboxVideoLinker" --pyinstaller-options --onefile --noconsole --icon=logo.icns --collect-all streamlit_sortables rekordbox_utils --splash .\logo.png

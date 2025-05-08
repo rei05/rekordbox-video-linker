@@ -1,4 +1,5 @@
 import io
+import psutil
 import platform
 import re
 import subprocess
@@ -89,8 +90,10 @@ def fit_list_len(list1, list2):
 
 def is_rekordbox_running():
     if platform.system() == "Windows":
-        result = subprocess.Popen(['tasklist'], stdout=subprocess.PIPE, text=True)
-        return "rekordbox.exe" in result.stdout
+        for proc in psutil.process_iter(['name']):
+            if proc.info['name'] and "rekordbox.exe" in proc.info['name'].lower():
+                return True
+        return False
     else:
         try:
             # AppleScript: 起動中のアプリ一覧を取得

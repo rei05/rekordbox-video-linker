@@ -1,7 +1,9 @@
 import time
+
 import streamlit as st
 from streamlit import session_state as ss
 from streamlit_sortables import sort_items
+
 from rekordbox_utils import (
     FileType,
     RekordboxDB,
@@ -9,6 +11,7 @@ from rekordbox_utils import (
     download_key,
     start_rekordbox,
 )
+
 
 class Content():
     def __init__(self, file_types):

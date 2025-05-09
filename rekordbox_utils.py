@@ -1,5 +1,4 @@
 import io
-import psutil
 import platform
 import re
 import subprocess

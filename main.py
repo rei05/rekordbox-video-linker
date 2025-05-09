@@ -1,3 +1,4 @@
+import ssl
 import time
 
 import streamlit as st
@@ -12,6 +13,10 @@ from rekordbox_utils import (
     start_rekordbox,
 )
 
+# SSL認証に関するエラーを回避するための設定
+# https://qiita.com/DisneyAladdin/items/9733a7e640a175c23f39
+# https://hosochin.com/2022/05/03/post-1105/
+ssl._create_default_https_context = ssl._create_unverified_context
 
 class Content():
     def __init__(self, file_types):

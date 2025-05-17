@@ -1,1 +1,1 @@
-streamlit-desktop-app build main.py --name "RekordboxVideoLinker" --pyinstaller-options --onefile --noconsole --icon=logo.ico --collect-all streamlit_sortables --hidden-import rekordbox_utils --splash logo.png
+streamlit-desktop-app build main.py --name "RekordboxVideoLinker" --pyinstaller-options --onefile --noconsole --icon=.\logo\logo.ico --collect-all streamlit_sortables --hidden-import rekordbox_utils --splash .\logo\logo.png
